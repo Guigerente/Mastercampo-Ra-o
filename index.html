@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MasterCampo Ração</title>
+<title>MasterCampo Nutrição Animal</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1a4a2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MasterCampo">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -75,10 +81,10 @@ textarea.form-input{resize:vertical}
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo">
-      <div class="login-logo-icon">🌾</div>
+      <div class="login-logo-icon" style="background:#1a4a2e">🌿</div>
       <div>
-        <h1>MasterCampo Ração</h1>
-        <p>Sistema de gestão comercial</p>
+        <h1>MasterCampo</h1>
+        <p>Nutrição Animal — Gestão Comercial</p>
       </div>
     </div>
     <div class="form-group">
@@ -97,7 +103,7 @@ textarea.form-input{resize:vertical}
 <!-- APP -->
 <div id="app-screen" class="hidden">
   <div class="topbar">
-    <div class="topbar-logo">🌾 MasterCampo Ração</div>
+    <div class="topbar-logo" style="color:#1a4a2e">🌿 MasterCampo</div>
     <div class="topbar-right">
       <span id="perfil-badge" style="font-size:12px;color:#666"></span>
       <div class="avatar" id="user-avatar">?</div>
