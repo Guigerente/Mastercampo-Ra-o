@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MasterCampo Ração</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh}
+.hidden{display:none!important}
+/* Login */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f5f5f0}
+.login-card{background:#fff;border:0.5px solid #ddd;border-radius:12px;padding:2rem;width:100%;max-width:380px}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem}
+.login-logo-icon{width:40px;height:40px;background:#185FA5;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px}
+.login-logo h1{font-size:18px;font-weight:500}
+.login-logo p{font-size:12px;color:#888}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:12px;color:#666;margin-bottom:4px}
+.form-group input,select{width:100%;padding:9px 12px;border:0.5px solid #ccc;border-radius:8px;font-size:14px;background:#fff;color:#1a1a1a}
+.btn{padding:9px 16px;border-radius:8px;border:0.5px solid #ccc;cursor:pointer;font-size:13px;background:#fff;color:#1a1a1a;transition:all 0.15s}
+.btn:hover{background:#f5f5f5}
+.btn-primary{background:#185FA5;border-color:#185FA5;color:#fff}
+.btn-primary:hover{background:#0C447C}
+.btn-success{background:#3B6D11;border-color:#3B6D11;color:#fff}
+.btn-danger{background:#A32D2D;border-color:#A32D2D;color:#fff}
+.btn-block{width:100%;margin-top:4px}
+/* App */
+#app-screen{min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:#fff;border-bottom:0.5px solid #e0e0e0;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:10}
+.topbar-logo{font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px;color:#1a1a1a}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.avatar{width:32px;height:32px;border-radius:50%;background:#E6F1FB;color:#185FA5;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500}
+.nav{background:#fff;border-bottom:0.5px solid #e0e0e0;padding:0 1.5rem;display:flex;overflow-x:auto}
+.nav-tab{padding:12px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:#666;white-space:nowrap;transition:all 0.15s}
+.nav-tab.active{border-bottom-color:#185FA5;color:#185FA5;font-weight:500}
+.content{padding:1.5rem;flex:1;max-width:900px;margin:0 auto;width:100%}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:1.5rem}
+.metric{background:#f0efe8;border-radius:8px;padding:1rem}
+.metric-label{font-size:12px;color:#666;margin-bottom:4px}
+.metric-value{font-size:22px;font-weight:500}
+.metric-sub{font-size:11px;color:#999;margin-top:2px}
+.card{background:#fff;border:0.5px solid #e0e0e0;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem}
+.card-title{font-size:14px;font-weight:500;margin-bottom:1rem;color:#1a1a1a}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-pendente{background:#FAEEDA;color:#854F0B}
+.badge-rejeitado{background:#FCEBEB;color:#A32D2D}
+.badge-aprovado{background:#EAF3DE;color:#3B6D11}
+.badge-faturado{background:#E6F1FB;color:#185FA5}
+.order-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid #eee;font-size:13px;gap:8px;flex-wrap:wrap}
+.order-row:last-child{border-bottom:none}
+.order-client{font-weight:500}
+.order-meta{color:#888;font-size:12px;margin-top:2px}
+.form-row{margin-bottom:12px}
+.form-label{font-size:12px;color:#666;margin-bottom:4px;display:block}
+.form-input{width:100%;padding:8px 10px;font-size:13px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#1a1a1a}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:1rem}
+.alert-warn{background:#FAEEDA;color:#854F0B}
+.alert-danger{background:#FCEBEB;color:#A32D2D;border:0.5px solid #F7C1C1}
+.alert-ok{background:#EAF3DE;color:#3B6D11}
+.seller-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid #eee}
+.seller-row:last-child{border-bottom:none}
+.seller-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.error-msg{color:#A32D2D;font-size:12px;margin-top:6px}
+.loading{text-align:center;padding:2rem;color:#888;font-size:14px}
+textarea.form-input{resize:vertical}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}.content{padding:1rem}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">🌾</div>
+      <div>
+        <h1>MasterCampo Ração</h1>
+        <p>Sistema de gestão comercial</p>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>E-mail</label>
+      <input type="email" id="login-email" placeholder="seu@email.com">
+    </div>
+    <div class="form-group">
+      <label>Senha</label>
+      <input type="password" id="login-senha" placeholder="••••••••">
+    </div>
+    <div id="login-error" class="error-msg hidden"></div>
+    <button class="btn btn-primary btn-block" onclick="fazerLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen" class="hidden">
+  <div class="topbar">
+    <div class="topbar-logo">🌾 MasterCampo Ração</div>
+    <div class="topbar-right">
+      <span id="perfil-badge" style="font-size:12px;color:#666"></span>
+      <div class="avatar" id="user-avatar">?</div>
+      <button class="btn" style="font-size:12px" onclick="fazerLogout()">Sair</button>
+    </div>
+  </div>
+
+  <!-- NAV VENDEDOR -->
+  <div id="nav-vendedor" class="nav hidden">
+    <div class="nav-tab active" onclick="trocarAba(this,'v-painel')">Meu Painel</div>
+    <div class="nav-tab" onclick="trocarAba(this,'v-novo')">Novo Pedido</div>
+    <div class="nav-tab" onclick="trocarAba(this,'v-pedidos')">Meus Pedidos</div>
+  </div>
+
+  <!-- NAV GERENTE -->
+  <div id="nav-gerente" class="nav hidden">
+    <div class="nav-tab active" onclick="trocarAba(this,'g-painel')">Painel Geral</div>
+    <div class="nav-tab" onclick="trocarAba(this,'g-aprovar')">Aprovar Pedidos</div>
+    <div class="nav-tab" onclick="trocarAba(this,'g-equipe')">Equipe</div>
+  </div>
+
+  <!-- NAV FABRICA -->
+  <div id="nav-fabrica" class="nav hidden">
+    <div class="nav-tab active" onclick="trocarAba(this,'f-painel')">Visão Geral</div>
+    <div class="nav-tab" onclick="trocarAba(this,'f-nf')">Vincular NF</div>
+    <div class="nav-tab" onclick="trocarAba(this,'f-relatorio')">Relatório Mensal</div>
+    <div class="nav-tab" onclick="trocarAba(this,'f-usuarios')">Usuários</div>
+  </div>
+
+  <div class="content">
+
+    <!-- VENDEDOR: PAINEL -->
+    <div id="v-painel" class="aba hidden">
+      <div class="metric-grid">
+        <div class="metric"><div class="metric-label">Vendas no mês (NF)</div><div class="metric-value" id="v-total-nf">R$ 0</div><div class="metric-sub">Notas emitidas</div></div>
+        <div class="metric"><div class="metric-label">Comissão a receber</div><div class="metric-value" id="v-comissao" style="color:#3B6D11">R$ 0</div><div class="metric-sub">Apenas NFs emitidas</div></div>
+        <div class="metric"><div class="metric-label">Pedidos pendentes</div><div class="metric-value" id="v-pendentes" style="color:#854F0B">0</div><div class="metric-sub">Aguardando aprovação</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Últimos pedidos</div>
+        <div id="v-lista-pedidos"><div class="loading">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- VENDEDOR: NOVO PEDIDO -->
+    <div id="v-novo" class="aba hidden">
+      <div class="card">
+        <div class="card-title">Registrar novo pedido</div>
+        <div class="form-row"><label class="form-label">Cliente</label><input class="form-input" type="text" id="p-cliente" placeholder="Nome do cliente ou fazenda"></div>
+        <div class="form-row"><label class="form-label">Produto</label>
+          <select class="form-input" id="p-produto" onchange="atualizarPreco()">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="form-grid">
+          <div class="form-row"><label class="form-label">Quantidade (kg)</label><input class="form-input" type="number" id="p-qtd" placeholder="0" oninput="calcularTotal()"></div>
+          <div class="form-row"><label class="form-label">Preço unitário (R$/kg)</label><input class="form-input" type="number" id="p-preco" placeholder="0,00" oninput="calcularTotal()"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row"><label class="form-label">Desconto (%)</label><input class="form-input" type="number" id="p-desconto" placeholder="0" min="0" max="50" oninput="calcularTotal()"></div>
+          <div class="form-row"><label class="form-label">Comissão (%)</label><input class="form-input" type="number" id="p-comissao" placeholder="5" oninput="calcularTotal()"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row"><label class="form-label">Valor total</label><input class="form-input" id="p-total" readonly style="background:#f5f5f0"></div>
+          <div class="form-row"><label class="form-label">Sua comissão</label><input class="form-input" id="p-comissao-val" readonly style="background:#f5f5f0"></div>
+        </div>
+        <div class="form-row"><label class="form-label">Observações</label><textarea class="form-input" id="p-obs" rows="2" placeholder="Condições especiais, prazo de entrega, etc."></textarea></div>
+        <div id="pedido-msg" class="hidden"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+          <button class="btn" onclick="limparFormPedido()">Limpar</button>
+          <button class="btn btn-primary" onclick="enviarPedido()">Enviar para aprovação</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VENDEDOR: MEUS PEDIDOS -->
+    <div id="v-pedidos" class="aba hidden">
+      <div class="card">
+        <div class="card-title">Todos os meus pedidos</div>
+        <div id="v-todos-pedidos"><div class="loading">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- GERENTE: PAINEL -->
+    <div id="g-painel" class="aba hidden">
+      <div class="metric-grid">
+        <div class="metric"><div class="metric-label">Faturamento total (NF)</div><div class="metric-value" id="g-total">R$ 0</div></div>
+        <div class="metric"><div class="metric-label">Comissões a pagar</div><div class="metric-value" id="g-comissoes" style="color:#A32D2D">R$ 0</div></div>
+        <div class="metric"><div class="metric-label">Aguardando aprovação</div><div class="metric-value" id="g-pendentes" style="color:#854F0B">0</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Pedidos recentes da equipe</div>
+        <div id="g-lista-recentes"><div class="loading">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- GERENTE: APROVAR -->
+    <div id="g-aprovar" class="aba hidden">
+      <div class="card">
+        <div class="card-title">Pedidos aguardando aprovação</div>
+        <div id="g-lista-aprovar"><div class="loading">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- GERENTE: EQUIPE -->
+    <div id="g-equipe" class="aba hidden">
+      <div class="card">
+        <div class="card-title">Comissões por vendedor — mês atual</div>
+        <p style="font-size:12px;color:#888;margin-bottom:12px">Apenas pedidos com nota fiscal emitida</p>
+        <div id="g-lista-equipe"><div class="loading">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- FABRICA: PAINEL -->
+    <div id="f-painel" class="aba hidden">
+      <div class="metric-grid">
+        <div class="metric"><div class="metric-label">Total faturado (mês)</div><div class="metric-value" id="f-total">R$ 0</div></div>
+        <div class="metric"><div class="metric-label">Aprovados sem NF</div><div class="metric-value" id="f-sem-nf" style="color:#854F0B">0</div></div>
+        <div class="metric"><div class="metric-label">NFs emitidas (mês)</div><div class="metric-value" id="f-nfs" style="color:#3B6D11">0</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Pedidos aprovados aguardando NF</div>
+        <div id="f-lista-aprovados"><div class="loading">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- FABRICA: VINCULAR NF -->
+    <div id="f-nf" class="aba hidden">
+      <div class="card">
+        <div class="card-title">Vincular nota fiscal a pedido aprovado</div>
+        <div class="form-row"><label class="form-label">Selecionar pedido aprovado</label>
+          <select class="form-input" id="nf-pedido">
+            <option value="">Selecione um pedido...</option>
+          </select>
+        </div>
+        <div class="form-grid">
+          <div class="form-row"><label class="form-label">Número da nota fiscal</label><input class="form-input" type="text" id="nf-numero" placeholder="Ex: 001456"></div>
+          <div class="form-row"><label class="form-label">Data de emissão</label><input class="form-input" type="date" id="nf-data"></div>
+        </div>
+        <div class="form-row"><label class="form-label">Valor da NF (R$)</label><input class="form-input" type="number" id="nf-valor" placeholder="0,00"></div>
+        <div id="nf-msg" class="hidden"></div>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px">
+          <button class="btn btn-primary" onclick="vincularNF()">Vincular NF ao pedido</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FABRICA: RELATORIO -->
+    <div id="f-relatorio" class="aba hidden">
+      <div class="card">
+        <div class="card-title">Fechamento mensal</div>
+        <p style="font-size:12px;color:#888;margin-bottom:12px">Baseado apenas em notas fiscais emitidas</p>
+        <div id="f-lista-relatorio"><div class="loading">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- FABRICA: USUARIOS -->
+    <div id="f-usuarios" class="aba hidden">
+      <div class="card">
+        <div class="card-title">Cadastrar novo usuário</div>
+        <div class="form-grid">
+          <div class="form-row"><label class="form-label">Nome completo</label><input class="form-input" type="text" id="u-nome" placeholder="Nome do vendedor"></div>
+          <div class="form-row"><label class="form-label">Perfil</label>
+            <select class="form-input" id="u-perfil">
+              <option value="vendedor">Vendedor</option>
+              <option value="gerente">Gerente Comercial</option>
+              <option value="fabrica">Fábrica / Admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row"><label class="form-label">E-mail</label><input class="form-input" type="email" id="u-email" placeholder="email@exemplo.com"></div>
+          <div class="form-row"><label class="form-label">Senha temporária</label><input class="form-input" type="text" id="u-senha" placeholder="Min. 6 caracteres"></div>
+        </div>
+        <div id="u-msg" class="hidden"></div>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px">
+          <button class="btn btn-primary" onclick="cadastrarUsuario()">Cadastrar usuário</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Usuários cadastrados</div>
+        <div id="lista-usuarios"><div class="loading">Carregando...</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SUPA_URL = 'https://twrzqexowpvjzbqhlnze.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3cnpxZXhvd3B2anpicWhsbnplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5Njk1MTEsImV4cCI6MjA5NDU0NTUxMX0.yuZ1khVZDj3vd0PpjzHGv4ttXXcfwKLqZQ9An1EdExk';
+const { createClient } = supabase;
+const db = createClient(SUPA_URL, SUPA_KEY);
+
+let usuarioAtual = null;
+let perfilAtual = null;
+let nomePerfil = null;
+let produtos = [];
+
+const fmt = v => 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2});
+const mesAtual = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; };
+const iniciais = n => n ? n.split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase() : '?';
+
+async function fazerLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-senha').value;
+  const err = document.getElementById('login-error');
+  err.classList.add('hidden');
+  const {data, error} = await db.auth.signInWithPassword({email, password: senha});
+  if (error) { err.textContent = 'E-mail ou senha incorretos.'; err.classList.remove('hidden'); return; }
+  await iniciarApp(data.user);
+}
+
+async function iniciarApp(user) {
+  usuarioAtual = user;
+  const {data: perfil} = await db.from('perfis').select('*').eq('id', user.id).single();
+  if (!perfil) { await db.auth.signOut(); alert('Usuário sem perfil cadastrado. Fale com o administrador.'); return; }
+  perfilAtual = perfil.perfil;
+  nomePerfil = perfil.nome;
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
+  document.getElementById('user-avatar').textContent = iniciais(nomePerfil);
+  document.getElementById('perfil-badge').textContent = nomePerfil + ' · ' + perfilAtual;
+  document.querySelectorAll('[id^="nav-"]').forEach(n => n.classList.add('hidden'));
+  document.getElementById('nav-' + perfilAtual).classList.remove('hidden');
+  document.querySelectorAll('.aba').forEach(a => a.classList.add('hidden'));
+  const abaInicial = {vendedor:'v-painel', gerente:'g-painel', fabrica:'f-painel'}[perfilAtual];
+  document.getElementById(abaInicial).classList.remove('hidden');
+  await carregarProdutos();
+  await carregarDados();
+}
+
+async function fazerLogout() {
+  await db.auth.signOut();
+  location.reload();
+}
+
+function trocarAba(el, id) {
+  el.closest('.nav').querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.aba').forEach(a => a.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  carregarAba(id);
+}
+
+async function carregarProdutos() {
+  const {data} = await db.from('produtos').select('*').eq('ativo', true);
+  produtos = data || [];
+  const sel = document.getElementById('p-produto');
+  if (sel) { sel.innerHTML = '<option value="">Selecione...</option>' + produtos.map(p => `<option value="${p.id}" data-preco="${p.preco_base}">${p.nome} — ${fmt(p.preco_base)}/kg</option>`).join(''); }
+}
+
+async function carregarDados() {
+  const aba = {vendedor:'v-painel', gerente:'g-painel', fabrica:'f-painel'}[perfilAtual];
+  await carregarAba(aba);
+}
+
+async function carregarAba(id) {
+  if (id === 'v-painel') await carregarPainelVendedor();
+  if (id === 'v-pedidos') await carregarTodosPedidosVendedor();
+  if (id === 'g-painel') await carregarPainelGerente();
+  if (id === 'g-aprovar') await carregarAprovar();
+  if (id === 'g-equipe') await carregarEquipe();
+  if (id === 'f-painel') await carregarPainelFabrica();
+  if (id === 'f-nf') await carregarSelectNF();
+  if (id === 'f-relatorio') await carregarRelatorio();
+  if (id === 'f-usuarios') await carregarUsuarios();
+}
+
+function badgePedido(s) {
+  const m = {pendente:'badge-pendente',aprovado:'badge-aprovado',rejeitado:'badge-rejeitado',faturado:'badge-faturado'};
+  return `<span class="badge ${m[s]||''}">${s}</span>`;
+}
+
+async function carregarPainelVendedor() {
+  const mes = mesAtual();
+  const {data: pedidos} = await db.from('pedidos').select('*,notas_fiscais(id,valor)').eq('vendedor_id', usuarioAtual.id);
+  if (!pedidos) return;
+  const doMes = pedidos.filter(p => p.criado_em?.startsWith(mes));
+  const faturados = doMes.filter(p => p.status === 'faturado');
+  const totalNF = faturados.reduce((a,p) => a + (p.notas_fiscais?.[0]?.valor || 0), 0);
+  const comissao = faturados.reduce((a,p) => a + p.comissao_valor, 0);
+  const pendentes = doMes.filter(p => p.status === 'pendente').length;
+  document.getElementById('v-total-nf').textContent = fmt(totalNF);
+  document.getElementById('v-comissao').textContent = fmt(comissao);
+  document.getElementById('v-pendentes').textContent = pendentes;
+  const recentes = pedidos.sort((a,b) => new Date(b.criado_em)-new Date(a.criado_em)).slice(0,5);
+  document.getElementById('v-lista-pedidos').innerHTML = recentes.length ? recentes.map(p => `
+    <div class="order-row">
+      <div><div class="order-client">${p.cliente}</div><div class="order-meta">#PED-${String(p.codigo).padStart(4,'0')} · ${new Date(p.criado_em).toLocaleDateString('pt-BR')}</div>
+      ${p.status==='rejeitado'&&p.motivo_rejeicao?`<div style="font-size:11px;color:#A32D2D;margin-top:2px">Motivo: ${p.motivo_rejeicao}</div>`:''}
+      </div>
+      <div style="text-align:right"><div style="font-weight:500">${fmt(p.valor_total)}</div>${badgePedido(p.status)}</div>
+    </div>`).join('') : '<p style="color:#888;font-size:13px;padding:1rem 0">Nenhum pedido ainda.</p>';
+}
+
+async function carregarTodosPedidosVendedor() {
+  const {data} = await db.from('pedidos').select('*').eq('vendedor_id', usuarioAtual.id).order('criado_em', {ascending:false});
+  document.getElementById('v-todos-pedidos').innerHTML = data && data.length ? data.map(p => `
+    <div class="order-row">
+      <div><div class="order-client">${p.cliente}</div><div class="order-meta">#PED-${String(p.codigo).padStart(4,'0')} · ${p.valor_total ? fmt(p.valor_total) : ''} · ${new Date(p.criado_em).toLocaleDateString('pt-BR')}</div>
+      ${p.status==='rejeitado'&&p.motivo_rejeicao?`<div style="font-size:11px;color:#A32D2D;margin-top:3px">Rejeitado: ${p.motivo_rejeicao}</div>`:''}
+      </div>
+      <div>${badgePedido(p.status)}</div>
+    </div>`).join('') : '<p style="color:#888;font-size:13px;padding:1rem 0">Nenhum pedido encontrado.</p>';
+}
+
+async function carregarPainelGerente() {
+  const mes = mesAtual();
+  const {data} = await db.from('pedidos').select('*,notas_fiscais(valor)');
+  if (!data) return;
+  const faturados = data.filter(p => p.status==='faturado' && p.criado_em?.startsWith(mes));
+  const totalNF = faturados.reduce((a,p) => a+(p.notas_fiscais?.[0]?.valor||0),0);
+  const comissoes = faturados.reduce((a,p) => a+p.comissao_valor,0);
+  const pendentes = data.filter(p => p.status==='pendente').length;
+  document.getElementById('g-total').textContent = fmt(totalNF);
+  document.getElementById('g-comissoes').textContent = fmt(comissoes);
+  document.getElementById('g-pendentes').textContent = pendentes;
+  const recentes = data.sort((a,b)=>new Date(b.criado_em)-new Date(a.criado_em)).slice(0,6);
+  document.getElementById('g-lista-recentes').innerHTML = recentes.map(p=>`
+    <div class="order-row">
+      <div><div class="order-client">${p.cliente}</div><div class="order-meta">#PED-${String(p.codigo).padStart(4,'0')} · ${new Date(p.criado_em).toLocaleDateString('pt-BR')}</div></div>
+      <div style="text-align:right"><div style="font-weight:500">${fmt(p.valor_total)}</div>${badgePedido(p.status)}</div>
+    </div>`).join('') || '<p style="color:#888;font-size:13px">Nenhum pedido.</p>';
+}
+
+async function carregarAprovar() {
+  const {data} = await db.from('pedidos').select('*,perfis(nome)').eq('status','pendente').order('criado_em',{ascending:false});
+  document.getElementById('g-lista-aprovar').innerHTML = data && data.length ? data.map(p => `
+    <div style="border:0.5px solid #e0e0e0;border-radius:8px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        <div>
+          <div style="font-size:13px;font-weight:500">${p.cliente} <span style="background:#f0efe8;padding:2px 8px;border-radius:12px;font-size:11px;color:#666">${p.perfis?.nome||'Vendedor'}</span></div>
+          <div style="font-size:12px;color:#888;margin-top:2px">#PED-${String(p.codigo).padStart(4,'0')} · ${p.comissao_pct}% comissão · ${p.desconto_pct}% desconto</div>
+        </div>
+        <div style="text-align:right;font-weight:500">${fmt(p.valor_total)}<br><span style="font-size:11px;color:#3B6D11">comissão: ${fmt(p.comissao_valor)}</span></div>
+      </div>
+      ${p.observacoes?`<div style="font-size:12px;color:#666;margin-bottom:8px">Obs: ${p.observacoes}</div>`:''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-danger" onclick="rejeitarPedido('${p.id}')">Rejeitar</button>
+        <button class="btn btn-success" onclick="aprovarPedido('${p.id}')">Aprovar</button>
+      </div>
+      <div id="rejeitar-form-${p.id}" class="hidden" style="margin-top:10px;padding-top:10px;border-top:0.5px solid #eee">
+        <label class="form-label">Motivo da rejeição</label>
+        <select class="form-input" id="motivo-sel-${p.id}" style="margin-bottom:8px">
+          <option>Comissão incorreta</option>
+          <option>Valores incorretos</option>
+          <option>Desconto acima do permitido</option>
+          <option>Produto sem estoque</option>
+          <option>Outro</option>
+        </select>
+        <textarea class="form-input" id="motivo-obs-${p.id}" rows="2" placeholder="Detalhe o motivo..."></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px;gap:6px">
+          <button class="btn" onclick="document.getElementById('rejeitar-form-${p.id}').classList.add('hidden')">Cancelar</button>
+          <button class="btn btn-danger" onclick="confirmarRejeicao('${p.id}')">Confirmar rejeição</button>
+        </div>
+      </div>
+    </div>`).join('') : '<p style="color:#888;font-size:13px;padding:1rem 0">Nenhum pedido aguardando aprovação.</p>';
+}
+
+function rejeitarPedido(id) {
+  document.getElementById('rejeitar-form-'+id).classList.remove('hidden');
+}
+
+async function confirmarRejeicao(id) {
+  const sel = document.getElementById('motivo-sel-'+id).value;
+  const obs = document.getElementById('motivo-obs-'+id).value;
+  const motivo = obs ? `${sel}: ${obs}` : sel;
+  await db.from('pedidos').update({status:'rejeitado', motivo_rejeicao:motivo, atualizado_em:new Date()}).eq('id',id);
+  await carregarAprovar();
+}
+
+async function aprovarPedido(id) {
+  await db.from('pedidos').update({status:'aprovado', atualizado_em:new Date()}).eq('id',id);
+  await carregarAprovar();
+}
+
+async function carregarEquipe() {
+  const mes = mesAtual();
+  const {data} = await db.from('pedidos').select('*,perfis(nome)').eq('status','faturado');
+  if (!data) return;
+  const doMes = data.filter(p => p.criado_em?.startsWith(mes));
+  const porVendedor = {};
+  doMes.forEach(p => {
+    const vid = p.vendedor_id;
+    if (!porVendedor[vid]) porVendedor[vid] = {nome:p.perfis?.nome||'Vendedor', total:0, comissao:0, nfs:0};
+    porVendedor[vid].total += p.valor_total;
+    porVendedor[vid].comissao += p.comissao_valor;
+    porVendedor[vid].nfs++;
+  });
+  const lista = Object.values(porVendedor).sort((a,b)=>b.comissao-a.comissao);
+  const totalCom = lista.reduce((a,v)=>a+v.comissao,0);
+  const cores = ['#E6F1FB','#E1F5EE','#EEEDFE','#FAECE7','#FAEEDA'];
+  const coresText = ['#185FA5','#085041','#3C3489','#993C1D','#854F0B'];
+  document.getElementById('g-lista-equipe').innerHTML = lista.length ? lista.map((v,i)=>`
+    <div class="seller-row">
+      <div class="seller-av" style="background:${cores[i%5]};color:${coresText[i%5]}">${iniciais(v.nome)}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:500">${v.nome}</div><div style="font-size:11px;color:#888">${v.nfs} NF(s) · ${fmt(v.total)} faturado</div></div>
+      <div style="font-size:14px;font-weight:500;color:#3B6D11">${fmt(v.comissao)}</div>
+    </div>`).join('') + `<div style="border-top:0.5px solid #ccc;margin-top:12px;padding-top:12px;display:flex;justify-content:space-between"><span style="font-weight:500">Total de comissões</span><span style="font-size:16px;font-weight:500;color:#A32D2D">${fmt(totalCom)}</span></div>`
+    : '<p style="color:#888;font-size:13px">Nenhuma NF emitida este mês.</p>';
+}
+
+async function carregarPainelFabrica() {
+  const mes = mesAtual();
+  const {data:nfs} = await db.from('notas_fiscais').select('*').gte('emitida_em', mes+'-01');
+  const {data:aprovados} = await db.from('pedidos').select('id').eq('status','aprovado');
+  const totalNF = (nfs||[]).reduce((a,n)=>a+n.valor,0);
+  document.getElementById('f-total').textContent = fmt(totalNF);
+  document.getElementById('f-sem-nf').textContent = (aprovados||[]).length;
+  document.getElementById('f-nfs').textContent = (nfs||[]).length;
+  const {data:aprov} = await db.from('pedidos').select('*,perfis(nome)').eq('status','aprovado').order('criado_em',{ascending:false});
+  document.getElementById('f-lista-aprovados').innerHTML = aprov && aprov.length ? aprov.map(p=>`
+    <div class="order-row">
+      <div><div class="order-client">${p.cliente} <span style="font-size:11px;color:#888">${p.perfis?.nome||''}</span></div>
+      <div class="order-meta">#PED-${String(p.codigo).padStart(4,'0')} · ${new Date(p.criado_em).toLocaleDateString('pt-BR')}</div></div>
+      <div style="text-align:right"><div style="font-weight:500">${fmt(p.valor_total)}</div><span class="badge badge-aprovado">Aprovado</span></div>
+    </div>`).join('') : '<p style="color:#888;font-size:13px;padding:1rem 0">Nenhum pedido aprovado aguardando NF.</p>';
+}
+
+async function carregarSelectNF() {
+  const {data} = await db.from('pedidos').select('*,perfis(nome)').eq('status','aprovado');
+  const sel = document.getElementById('nf-pedido');
+  sel.innerHTML = '<option value="">Selecione um pedido...</option>' + (data||[]).map(p=>`<option value="${p.id}">#PED-${String(p.codigo).padStart(4,'0')} · ${p.cliente} · ${fmt(p.valor_total)}</option>`).join('');
+  const hoje = new Date().toISOString().split('T')[0];
+  document.getElementById('nf-data').value = hoje;
+}
+
+async function vincularNF() {
+  const pedidoId = document.getElementById('nf-pedido').value;
+  const numero = document.getElementById('nf-numero').value.trim();
+  const data = document.getElementById('nf-data').value;
+  const valor = parseFloat(document.getElementById('nf-valor').value);
+  const msg = document.getElementById('nf-msg');
+  if (!pedidoId||!numero||!data||!valor) { msg.className='alert alert-warn'; msg.textContent='Preencha todos os campos.'; msg.classList.remove('hidden'); return; }
+  const {error} = await db.from('notas_fiscais').insert({pedido_id:pedidoId, numero, emitida_em:data, valor});
+  if (error) { msg.className='alert alert-danger'; msg.textContent='Erro: '+error.message; msg.classList.remove('hidden'); return; }
+  await db.from('pedidos').update({status:'faturado', atualizado_em:new Date()}).eq('id',pedidoId);
+  msg.className='alert alert-ok'; msg.textContent='NF vinculada com sucesso! Pedido marcado como faturado.'; msg.classList.remove('hidden');
+  document.getElementById('nf-numero').value=''; document.getElementById('nf-valor').value='';
+  await carregarSelectNF();
+}
+
+async function carregarRelatorio() {
+  const mes = mesAtual();
+  const {data} = await db.from('pedidos').select('*,perfis(nome),notas_fiscais(valor)').eq('status','faturado');
+  const doMes = (data||[]).filter(p=>p.criado_em?.startsWith(mes));
+  const porVendedor = {};
+  doMes.forEach(p=>{
+    const vid = p.vendedor_id;
+    if(!porVendedor[vid]) porVendedor[vid]={nome:p.perfis?.nome||'Vendedor',total:0,comissao:0,nfs:0};
+    porVendedor[vid].total += p.notas_fiscais?.[0]?.valor||p.valor_total;
+    porVendedor[vid].comissao += p.comissao_valor;
+    porVendedor[vid].nfs++;
+  });
+  const lista = Object.values(porVendedor).sort((a,b)=>b.comissao-a.comissao);
+  const total = lista.reduce((a,v)=>a+v.comissao,0);
+  const cores = ['#E6F1FB','#E1F5EE','#EEEDFE','#FAECE7','#FAEEDA'];
+  const coresText = ['#185FA5','#085041','#3C3489','#993C1D','#854F0B'];
+  document.getElementById('f-lista-relatorio').innerHTML = lista.length ? lista.map((v,i)=>`
+    <div class="seller-row">
+      <div class="seller-av" style="background:${cores[i%5]};color:${coresText[i%5]}">${iniciais(v.nome)}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:500">${v.nome}</div><div style="font-size:11px;color:#888">${v.nfs} NF(s) · ${fmt(v.total)} faturado</div></div>
+      <div style="font-size:14px;font-weight:500;color:#3B6D11">${fmt(v.comissao)}</div>
+    </div>`).join('') + `<div style="border-top:0.5px solid #ccc;margin-top:12px;padding-top:12px;display:flex;justify-content:space-between"><span style="font-weight:500">Total a pagar</span><span style="font-size:16px;font-weight:500;color:#A32D2D">${fmt(total)}</span></div>`
+    : '<p style="color:#888;font-size:13px">Nenhuma NF emitida este mês.</p>';
+}
+
+async function carregarUsuarios() {
+  const {data} = await db.from('perfis').select('*').order('nome');
+  document.getElementById('lista-usuarios').innerHTML = data && data.length ? data.map(u=>`
+    <div class="seller-row">
+      <div class="seller-av" style="background:#f0efe8;color:#666">${iniciais(u.nome)}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:500">${u.nome}</div><div style="font-size:11px;color:#888">${u.perfil}</div></div>
+      <span style="font-size:11px;padding:3px 10px;border-radius:20px;background:${u.ativo?'#EAF3DE':'#f0efe8'};color:${u.ativo?'#3B6D11':'#888'}">${u.ativo?'ativo':'inativo'}</span>
+    </div>`).join('') : '<p style="color:#888;font-size:13px">Nenhum usuário cadastrado.</p>';
+}
+
+async function cadastrarUsuario() {
+  const nome = document.getElementById('u-nome').value.trim();
+  const perfil = document.getElementById('u-perfil').value;
+  const email = document.getElementById('u-email').value.trim();
+  const senha = document.getElementById('u-senha').value;
+  const msg = document.getElementById('u-msg');
+  if (!nome||!email||!senha) { msg.className='alert alert-warn'; msg.textContent='Preencha todos os campos.'; msg.classList.remove('hidden'); return; }
+  const {data, error} = await db.auth.signUp({email, password:senha});
+  if (error) { msg.className='alert alert-danger'; msg.textContent='Erro: '+error.message; msg.classList.remove('hidden'); return; }
+  await db.from('perfis').insert({id:data.user.id, nome, perfil});
+  msg.className='alert alert-ok'; msg.textContent=`Usuário "${nome}" cadastrado com sucesso!`; msg.classList.remove('hidden');
+  document.getElementById('u-nome').value=''; document.getElementById('u-email').value=''; document.getElementById('u-senha').value='';
+  await carregarUsuarios();
+}
+
+function atualizarPreco() {
+  const sel = document.getElementById('p-produto');
+  const opt = sel.options[sel.selectedIndex];
+  if (opt && opt.dataset.preco) { document.getElementById('p-preco').value = opt.dataset.preco; }
+  calcularTotal();
+}
+
+function calcularTotal() {
+  const qtd = parseFloat(document.getElementById('p-qtd').value)||0;
+  const preco = parseFloat(document.getElementById('p-preco').value)||0;
+  const desc = parseFloat(document.getElementById('p-desconto').value)||0;
+  const com = parseFloat(document.getElementById('p-comissao').value)||0;
+  const base = qtd * preco;
+  const total = base * (1 - desc/100);
+  const comVal = base * com/100 - base * Math.max(0, desc-2)/100;
+  document.getElementById('p-total').value = fmt(total);
+  document.getElementById('p-comissao-val').value = fmt(Math.max(0, comVal));
+}
+
+async function enviarPedido() {
+  const cliente = document.getElementById('p-cliente').value.trim();
+  const produtoId = document.getElementById('p-produto').value;
+  const qtd = parseFloat(document.getElementById('p-qtd').value)||0;
+  const preco = parseFloat(document.getElementById('p-preco').value)||0;
+  const desc = parseFloat(document.getElementById('p-desconto').value)||0;
+  const com = parseFloat(document.getElementById('p-comissao').value)||0;
+  const obs = document.getElementById('p-obs').value;
+  const msg = document.getElementById('pedido-msg');
+  if (!cliente||!produtoId||!qtd||!preco||!com) { msg.className='alert alert-warn'; msg.textContent='Preencha todos os campos obrigatórios.'; msg.classList.remove('hidden'); return; }
+  const base = qtd * preco;
+  const total = base * (1 - desc/100);
+  const comVal = Math.max(0, base * com/100 - base * Math.max(0, desc-2)/100);
+  const {error} = await db.from('pedidos').insert({vendedor_id:usuarioAtual.id, cliente, produto_id:produtoId, quantidade:qtd, preco_unitario:preco, desconto_pct:desc, comissao_pct:com, valor_total:total, comissao_valor:comVal, observacoes:obs});
+  if (error) { msg.className='alert alert-danger'; msg.textContent='Erro ao enviar: '+error.message; msg.classList.remove('hidden'); return; }
+  msg.className='alert alert-ok'; msg.textContent='Pedido enviado para aprovação do gerente!'; msg.classList.remove('hidden');
+  limparFormPedido();
+}
+
+function limparFormPedido() {
+  ['p-cliente','p-qtd','p-preco','p-desconto','p-comissao','p-obs','p-total','p-comissao-val'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.getElementById('p-produto').value='';
+}
+
+db.auth.getSession().then(({data:{session}})=>{ if(session) iniciarApp(session.user); });
+</script>
+</body>
+</html>
